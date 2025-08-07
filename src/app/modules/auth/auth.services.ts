@@ -1,0 +1,169 @@
+import { UserModel } from "./auth.model";
+import { generateToken } from "../../utils/generateToken";
+import bcrypt from "bcrypt";
+
+const registerUser = async (userData: any) => {
+  const { name, email, password, role } = userData;
+
+  // Input validation
+  if (!name || !email || !password) {
+    return {
+      success: false,
+      status: 400,
+      message: "Name, email, and password are required",
+    };
+  }
+
+  try {
+    // Check if user already exists
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return {
+        success: false,
+        status: 409,
+        message: "User with this email already exists",
+      };
+    }
+
+    // Create new user
+    const user = await UserModel.create({
+      name,
+      email,
+      password,
+      role: role || "customer",
+    });
+
+    // Generate token
+    const token = generateToken(user);
+
+    // Return user data without password
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    return {
+      success: true,
+      status: 201,
+      data: {
+        user: userResponse,
+        token,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const loginUser = async (userData: any) => {
+  const { email, password } = userData;
+
+  // Input validation
+  if (!email || !password) {
+    return {
+      success: false,
+      status: 400,
+      message: "Email and password are required",
+    };
+  }
+
+  try {
+    // Find user by email
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return {
+        success: false,
+        status: 401,
+        message: "Invalid email or password",
+      };
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return {
+        success: false,
+        status: 401,
+        message: "Invalid email or password",
+      };
+    }
+
+    // Generate token
+    const token = generateToken(user);
+
+    // Return user data without password
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        user: userResponse,
+        token,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const getMe = async (userId: string) => {
+  try {
+    // Find user by ID
+    const user = await UserModel.findById(userId).select("-password");
+    if (!user) {
+      return {
+        success: false,
+        status: 404,
+        message: "User not found",
+      };
+    }
+
+    // Return user data without password
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        user: userResponse,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const logoutUser = async () => {
+  return {
+    success: true,
+    status: 200,
+    message: "Logged out successfully",
+  };
+};
+
+export const AuthServices = { registerUser, loginUser, getMe, logoutUser };
