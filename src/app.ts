@@ -3,6 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { AuthRoutes } from "./app/modules/auth/auth.route";
+import { ParcelRoutes } from "./app/modules/parcels/parcel.route";
 
 const app = express();
 app.use(
@@ -16,6 +17,7 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/parcel", ParcelRoutes);
 
 app.get("/", (req, res) => {
   res.send(`Courier api is live... 🚀`);

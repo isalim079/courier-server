@@ -11,11 +11,11 @@ const locationSchema = new Schema(
   {
     lat: {
       type: Number,
-      required: true,
+      required: false,
     },
     lng: {
       type: Number,
-      required: true,
+      required: false,
     },
   },
   { _id: false }
@@ -54,7 +54,7 @@ const addressSchema = new Schema(
     },
     location: {
       type: locationSchema,
-      required: true,
+      required: false,
     },
   },
   { _id: false }

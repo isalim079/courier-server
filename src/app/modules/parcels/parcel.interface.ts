@@ -10,7 +10,7 @@ export type TAddress = {
   address2?: string;
   city: string;
   postalCode: string;
-  location: TLocation;
+  location?: TLocation;
 };
 
 export type TParcelDetails = {

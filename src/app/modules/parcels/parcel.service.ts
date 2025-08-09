@@ -1,4 +1,5 @@
 import { ParcelModel } from "./parcel.model";
+import config from "../../config";
 
 // Generate unique tracking ID
 const generateTrackingId = (): string => {
@@ -6,6 +7,42 @@ const generateTrackingId = (): string => {
   const timestamp = Date.now().toString();
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `${prefix}${timestamp}${random}`;
+};
+
+// Convert address to coordinates using Google Geocoding API
+const getCoordinatesFromAddress = async (address: any) => {
+  try {
+    const fullAddress = `${address.address1}, ${address.city}, ${address.postalCode}`;
+    const encodedAddress = encodeURIComponent(fullAddress);
+    const apiKey = config.google_map_api_key;
+    
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`
+    );
+    
+    const data = await response.json();
+    
+    if (data.status === "OK" && data.results.length > 0) {
+      const location = data.results[0].geometry.location;
+      return {
+        success: true,
+        coordinates: {
+          lat: location.lat,
+          lng: location.lng,
+        },
+      };
+    } else {
+      return {
+        success: false,
+        message: "Address not found or invalid",
+      };
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      message: `Geocoding failed: ${error.message}`,
+    };
+  }
 };
 
 const bookParcel = async (parcelData: any) => {
@@ -32,11 +69,29 @@ const bookParcel = async (parcelData: any) => {
       };
     }
 
+    // Get coordinates for receiver address using Google Geocoding API
+    const geocodingResult = await getCoordinatesFromAddress(parcelData.receiverInfo);
+    
+    // Check if geocoding was successful
+    if (!geocodingResult.success) {
+      return {
+        success: false,
+        status: 400,
+        message: geocodingResult.message,
+      };
+    }
+    
+    // Add coordinates to receiver info
+    const receiverInfoWithLocation = {
+      ...parcelData.receiverInfo,
+      location: geocodingResult.coordinates,
+    };
+
     // Create new parcel
     const parcel = await ParcelModel.create({
       trackingId,
       senderInfo: parcelData.senderInfo,
-      receiverInfo: parcelData.receiverInfo,
+      receiverInfo: receiverInfoWithLocation,
       parcelDetails: parcelData.parcelDetails,
       payment: parcelData.payment,
       pickupSchedule,
