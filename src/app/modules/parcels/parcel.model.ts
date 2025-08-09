@@ -2,8 +2,9 @@ import { Schema, model, Document, Types } from "mongoose";
 import { TParcel } from "./parcel.interface";
 
 export interface IParcelDocument
-  extends Omit<TParcel, "assignedAgent">,
+  extends Omit<TParcel, "assignedAgent" | "customer">,
     Document {
+  customer: Types.ObjectId;
   assignedAgent?: Types.ObjectId | null;
 }
 
@@ -109,6 +110,11 @@ const parcelSchema = new Schema<IParcelDocument>(
       unique: true,
       trim: true,
     },
+    customer: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     senderInfo: {
       type: addressSchema,
       required: true,
@@ -148,6 +154,7 @@ const parcelSchema = new Schema<IParcelDocument>(
 // Index for faster queries
 parcelSchema.index({ trackingId: 1 });
 parcelSchema.index({ status: 1 });
+parcelSchema.index({ customer: 1 });
 parcelSchema.index({ assignedAgent: 1 });
 
 export const ParcelModel = model<IParcelDocument>("parcelDB", parcelSchema);

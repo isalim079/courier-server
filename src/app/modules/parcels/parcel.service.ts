@@ -15,13 +15,13 @@ const getCoordinatesFromAddress = async (address: any) => {
     const fullAddress = `${address.address1}, ${address.city}, ${address.postalCode}`;
     const encodedAddress = encodeURIComponent(fullAddress);
     const apiKey = config.google_map_api_key;
-    
+
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`
     );
-    
+
     const data = await response.json();
-    
+
     if (data.status === "OK" && data.results.length > 0) {
       const location = data.results[0].geometry.location;
       return {
@@ -70,8 +70,10 @@ const bookParcel = async (parcelData: any) => {
     }
 
     // Get coordinates for receiver address using Google Geocoding API
-    const geocodingResult = await getCoordinatesFromAddress(parcelData.receiverInfo);
-    
+    const geocodingResult = await getCoordinatesFromAddress(
+      parcelData.receiverInfo
+    );
+
     // Check if geocoding was successful
     if (!geocodingResult.success) {
       return {
@@ -80,7 +82,7 @@ const bookParcel = async (parcelData: any) => {
         message: geocodingResult.message,
       };
     }
-    
+
     // Add coordinates to receiver info
     const receiverInfoWithLocation = {
       ...parcelData.receiverInfo,
@@ -90,6 +92,7 @@ const bookParcel = async (parcelData: any) => {
     // Create new parcel
     const parcel = await ParcelModel.create({
       trackingId,
+      customer: parcelData.customerId,
       senderInfo: parcelData.senderInfo,
       receiverInfo: receiverInfoWithLocation,
       parcelDetails: parcelData.parcelDetails,
@@ -98,10 +101,14 @@ const bookParcel = async (parcelData: any) => {
       status: "Pending",
     });
 
+    // Populate customer info
+    await parcel.populate("customer", "name email");
+
     // Return parcel data
     const parcelResponse = {
       id: parcel._id,
       trackingId: parcel.trackingId,
+      customer: parcel.customer,
       senderInfo: parcel.senderInfo,
       receiverInfo: parcel.receiverInfo,
       parcelDetails: parcel.parcelDetails,
@@ -127,4 +134,130 @@ const bookParcel = async (parcelData: any) => {
   }
 };
 
-export const ParcelServices = { bookParcel };
+const getAllBookings = async () => {
+  try {
+    const parcels = await ParcelModel.find({})
+      .populate("customer", "name email")
+      .populate("assignedAgent", "name email")
+      .sort({ createdAt: -1 });
+
+    const parcelsResponse = parcels.map((parcel) => ({
+      id: parcel._id,
+      trackingId: parcel.trackingId,
+      customer: parcel.customer,
+      senderInfo: parcel.senderInfo,
+      receiverInfo: parcel.receiverInfo,
+      parcelDetails: parcel.parcelDetails,
+      payment: parcel.payment,
+      pickupSchedule: parcel.pickupSchedule,
+      status: parcel.status,
+      assignedAgent: parcel.assignedAgent,
+    }));
+
+    // Get delivery status counts
+    const statusCounts = await ParcelModel.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Create status summary
+    const deliveryStats = {
+      pendingPickups: statusCounts.find((s) => s._id === "Pending")?.count || 0,
+      activeDeliveries: statusCounts
+        .filter((s) => ["Picked Up", "In Transit"].includes(s._id))
+        .reduce((sum, item) => sum + item.count, 0),
+      completedDeliveries:
+        statusCounts.find((s) => s._id === "Delivered")?.count || 0,
+      failedDeliveries:
+        statusCounts.find((s) => s._id === "Failed")?.count || 0,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcels: parcelsResponse,
+        total: parcels.length,
+        deliveryStats,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const getCustomerBookings = async (customerId: string) => {
+  try {
+    const parcels = await ParcelModel.find({ customer: customerId })
+      .populate("customer", "name email")
+      .populate("assignedAgent", "name email")
+      .sort({ createdAt: -1 });
+
+    const parcelsResponse = parcels.map((parcel) => ({
+      id: parcel._id,
+      trackingId: parcel.trackingId,
+      customer: parcel.customer,
+      senderInfo: parcel.senderInfo,
+      receiverInfo: parcel.receiverInfo,
+      parcelDetails: parcel.parcelDetails,
+      payment: parcel.payment,
+      pickupSchedule: parcel.pickupSchedule,
+      status: parcel.status,
+      assignedAgent: parcel.assignedAgent,
+    }));
+
+    // Get delivery status counts for this customer
+    const { Types } = require("mongoose");
+    const statusCounts = await ParcelModel.aggregate([
+      { $match: { customer: new Types.ObjectId(customerId) } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Create status summary
+    const deliveryStats = {
+      pendingPickups: statusCounts.find((s) => s._id === "Pending")?.count || 0,
+      activeDeliveries: statusCounts
+        .filter((s) => ["Picked Up", "In Transit"].includes(s._id))
+        .reduce((sum, item) => sum + item.count, 0),
+      completedDeliveries:
+        statusCounts.find((s) => s._id === "Delivered")?.count || 0,
+      failedDeliveries:
+        statusCounts.find((s) => s._id === "Failed")?.count || 0,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcels: parcelsResponse,
+        total: parcels.length,
+        deliveryStats,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+export const ParcelServices = {
+  bookParcel,
+  getAllBookings,
+  getCustomerBookings,
+};

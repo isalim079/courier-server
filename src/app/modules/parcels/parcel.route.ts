@@ -13,4 +13,18 @@ router.post(
   ParcelController.bookParcel
 );
 
+router.get(
+  "/all-bookings",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.ADMIN),
+  ParcelController.getAllBookings
+);
+
+router.get(
+  "/my-bookings",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.CUSTOMER),
+  ParcelController.getMyBookings
+);
+
 export const ParcelRoutes = router;

@@ -27,6 +27,7 @@ export type TPayment = {
 
 export type TParcel = {
   trackingId: string;
+  customer: string; // Customer who booked the parcel
   senderInfo: TAddress;
   receiverInfo: TAddress;
   parcelDetails: TParcelDetails;
