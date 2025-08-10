@@ -166,4 +166,78 @@ const logoutUser = async () => {
   };
 };
 
-export const AuthServices = { registerUser, loginUser, getMe, logoutUser };
+const getAllUsers = async () => {
+  try {
+    // Get all users without password
+    const users = await UserModel.find({})
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    const usersResponse = users.map((user) => ({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    }));
+
+    // Get role counts using aggregation
+    const roleCounts = await UserModel.aggregate([
+      {
+        $group: {
+          _id: "$role",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Extract counts for each role
+    const adminCount =
+      roleCounts.find((role) => role._id === "admin")?.count || 0;
+    const customerCount =
+      roleCounts.find((role) => role._id === "customer")?.count || 0;
+    const agentCount =
+      roleCounts.find((role) => role._id === "agent")?.count || 0;
+
+    // Filter users by role
+    const admins = usersResponse.filter((user) => user.role === "admin");
+    const customers = usersResponse.filter((user) => user.role === "customer");
+    const agents = usersResponse.filter((user) => user.role === "agent");
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        totalUsers: {
+          total: users.length,
+          users: usersResponse,
+        },
+        totalAdmins: {
+          total: adminCount,
+          users: admins,
+        },
+        totalCustomers: {
+          total: customerCount,
+          users: customers,
+        },
+        totalAgents: {
+          total: agentCount,
+          users: agents,
+        },
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+export const AuthServices = {
+  registerUser,
+  loginUser,
+  getMe,
+  logoutUser,
+  getAllUsers,
+};

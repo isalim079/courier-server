@@ -109,4 +109,22 @@ const logoutUser = async (req: Request, res: Response) => {
   });
 };
 
-export const AuthController = { registerUser, loginUser, getMe, logoutUser };
+const getAllUsers = async (req: Request, res: Response) => {
+  const result = await AuthServices.getAllUsers();
+
+  // Handle error responses
+  if (!result.success) {
+    return res.status(result.status).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  res.status(result.status).json({
+    success: true,
+    message: "All users retrieved successfully",
+    data: result.data,
+  });
+};
+
+export const AuthController = { registerUser, loginUser, getMe, logoutUser, getAllUsers };
