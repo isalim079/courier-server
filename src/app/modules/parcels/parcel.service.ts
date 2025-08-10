@@ -256,8 +256,87 @@ const getCustomerBookings = async (customerId: string) => {
   }
 };
 
+const updateAssignedAgent = async (parcelId: string, agentId: string) => {
+  try {
+    // Find the parcel
+    const parcel = await ParcelModel.findById(parcelId);
+    if (!parcel) {
+      return {
+        success: false,
+        status: 404,
+        message: "Parcel not found",
+      };
+    }
+
+    // Update the assigned agent
+    const updatedParcel = await ParcelModel.findByIdAndUpdate(
+      parcelId,
+      { assignedAgent: agentId },
+      { new: true }
+    )
+      .populate("customer", "name email")
+      .populate("assignedAgent", "name email");
+
+    // Return updated parcel data
+    const parcelResponse = {
+      id: updatedParcel!._id,
+      trackingId: updatedParcel!.trackingId,
+      customer: updatedParcel!.customer,
+      senderInfo: updatedParcel!.senderInfo,
+      receiverInfo: updatedParcel!.receiverInfo,
+      parcelDetails: updatedParcel!.parcelDetails,
+      payment: updatedParcel!.payment,
+      pickupSchedule: updatedParcel!.pickupSchedule,
+      status: updatedParcel!.status,
+      assignedAgent: updatedParcel!.assignedAgent,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcel: parcelResponse,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const deleteParcel = async (parcelId: string) => {
+  try {
+    // Find and delete the parcel
+    const parcel = await ParcelModel.findByIdAndDelete(parcelId);
+    if (!parcel) {
+      return {
+        success: false,
+        status: 404,
+        message: "Parcel not found",
+      };
+    }
+
+    return {
+      success: true,
+      status: 200,
+      message: "Parcel deleted successfully",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
 export const ParcelServices = {
   bookParcel,
   getAllBookings,
   getCustomerBookings,
+  updateAssignedAgent,
+  deleteParcel,
 };

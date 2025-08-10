@@ -69,9 +69,8 @@ const parcelDetailsSchema = new Schema(
       required: true,
     },
     weight: {
-      type: Number,
+      type: String,
       required: true,
-      min: 0,
     },
     description: {
       type: String,

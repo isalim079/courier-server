@@ -15,7 +15,7 @@ export type TAddress = {
 
 export type TParcelDetails = {
   type: "small" | "medium" | "large";
-  weight: number;
+  weight: string;
   description: string;
   specialInstructions?: string;
 };
@@ -27,7 +27,7 @@ export type TPayment = {
 
 export type TParcel = {
   trackingId: string;
-  customer: string; // Customer who booked the parcel
+  customer: string; 
   senderInfo: TAddress;
   receiverInfo: TAddress;
   parcelDetails: TParcelDetails;

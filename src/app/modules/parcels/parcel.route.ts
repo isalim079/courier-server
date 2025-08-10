@@ -27,4 +27,18 @@ router.get(
   ParcelController.getMyBookings
 );
 
+router.put(
+  "/assign-agent/:parcelId",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.ADMIN),
+  ParcelController.updateAssignedAgent
+);
+
+router.delete(
+  "/delete/:parcelId",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.ADMIN),
+  ParcelController.deleteParcel
+);
+
 export const ParcelRoutes = router;
