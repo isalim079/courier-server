@@ -127,4 +127,23 @@ const getAllUsers = async (req: Request, res: Response) => {
   });
 };
 
-export const AuthController = { registerUser, loginUser, getMe, logoutUser, getAllUsers };
+const deleteUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  const result = await AuthServices.deleteUser(userId);
+
+  // Handle error responses
+  if (!result.success) {
+    return res.status(result.status).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  res.status(result.status).json({
+    success: true,
+    message: result.message,
+  });
+};
+
+export const AuthController = { registerUser, loginUser, getMe, logoutUser, getAllUsers, deleteUser };

@@ -234,10 +234,37 @@ const getAllUsers = async () => {
   }
 };
 
+const deleteUser = async (userId: string) => {
+  try {
+    // Find and delete the user
+    const user = await UserModel.findByIdAndDelete(userId);
+    if (!user) {
+      return {
+        success: false,
+        status: 404,
+        message: "User not found",
+      };
+    }
+
+    return {
+      success: true,
+      status: 200,
+      message: "User deleted successfully",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
 export const AuthServices = {
   registerUser,
   loginUser,
   getMe,
   logoutUser,
   getAllUsers,
+  deleteUser,
 };

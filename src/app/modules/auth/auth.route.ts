@@ -17,4 +17,11 @@ router.get(
   AuthController.getAllUsers
 );
 
+router.delete(
+  "/delete-user/:userId",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.ADMIN),
+  AuthController.deleteUser
+);
+
 export const AuthRoutes = router;
