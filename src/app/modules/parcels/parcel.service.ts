@@ -166,14 +166,15 @@ const getAllBookings = async () => {
 
     // Create status summary
     const deliveryStats = {
-      pendingPickups: statusCounts.find((s) => s._id === "Pending")?.count || 0,
+      pendingPickups:
+        statusCounts.find((status) => status._id === "Pending")?.count || 0,
       activeDeliveries: statusCounts
-        .filter((s) => ["Picked Up", "In Transit"].includes(s._id))
+        .filter((status) => ["Picked Up", "In Transit"].includes(status._id))
         .reduce((sum, item) => sum + item.count, 0),
       completedDeliveries:
-        statusCounts.find((s) => s._id === "Delivered")?.count || 0,
+        statusCounts.find((status) => status._id === "Delivered")?.count || 0,
       failedDeliveries:
-        statusCounts.find((s) => s._id === "Failed")?.count || 0,
+        statusCounts.find((status) => status._id === "Failed")?.count || 0,
     };
 
     return {
@@ -228,14 +229,15 @@ const getCustomerBookings = async (customerId: string) => {
 
     // Create status summary
     const deliveryStats = {
-      pendingPickups: statusCounts.find((s) => s._id === "Pending")?.count || 0,
+      pendingPickups:
+        statusCounts.find((status) => status._id === "Pending")?.count || 0,
       activeDeliveries: statusCounts
-        .filter((s) => ["Picked Up", "In Transit"].includes(s._id))
+        .filter((status) => ["Picked Up", "In Transit"].includes(status._id))
         .reduce((sum, item) => sum + item.count, 0),
       completedDeliveries:
-        statusCounts.find((s) => s._id === "Delivered")?.count || 0,
+        statusCounts.find((status) => status._id === "Delivered")?.count || 0,
       failedDeliveries:
-        statusCounts.find((s) => s._id === "Failed")?.count || 0,
+        statusCounts.find((status) => status._id === "Failed")?.count || 0,
     };
 
     return {
@@ -333,10 +335,158 @@ const deleteParcel = async (parcelId: string) => {
   }
 };
 
+const updateParcelStatus = async (
+  parcelId: string,
+  status: string,
+  agentId: string
+) => {
+  try {
+    // Find the parcel and verify it's assigned to this agent
+    const parcel = await ParcelModel.findById(parcelId);
+    if (!parcel) {
+      return {
+        success: false,
+        status: 404,
+        message: "Parcel not found",
+      };
+    }
+
+    // Check if the parcel is assigned to this agent
+    if (parcel.assignedAgent?.toString() !== agentId) {
+      return {
+        success: false,
+        status: 403,
+        message: "You can only update parcels assigned to you",
+      };
+    }
+
+    // Update the status
+    const updatedParcel = await ParcelModel.findByIdAndUpdate(
+      parcelId,
+      { status },
+      { new: true }
+    )
+      .populate("customer", "name email")
+      .populate("assignedAgent", "name email");
+
+    // Return updated parcel data
+    const parcelResponse = {
+      id: updatedParcel!._id,
+      trackingId: updatedParcel!.trackingId,
+      customer: updatedParcel!.customer,
+      senderInfo: updatedParcel!.senderInfo,
+      receiverInfo: updatedParcel!.receiverInfo,
+      parcelDetails: updatedParcel!.parcelDetails,
+      payment: updatedParcel!.payment,
+      pickupSchedule: updatedParcel!.pickupSchedule,
+      status: updatedParcel!.status,
+      assignedAgent: updatedParcel!.assignedAgent,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcel: parcelResponse,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+const getAgentDashboard = async (agentId: string) => {
+  try {
+    // Get all parcels assigned to this agent
+    const parcels = await ParcelModel.find({ assignedAgent: agentId })
+      .populate("customer", "name email")
+      .sort({ createdAt: -1 });
+
+    const parcelsResponse = parcels.map((parcel) => ({
+      id: parcel._id,
+      trackingId: parcel.trackingId,
+      customer: parcel.customer,
+      senderInfo: parcel.senderInfo,
+      receiverInfo: parcel.receiverInfo,
+      parcelDetails: parcel.parcelDetails,
+      payment: parcel.payment,
+      pickupSchedule: parcel.pickupSchedule,
+      status: parcel.status,
+    }));
+
+    // Get today's date range
+    const today = new Date();
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+
+    // Get parcels assigned today
+    const parcelsAssignedToday = await ParcelModel.find({
+      assignedAgent: agentId,
+      updatedAt: { $gte: startOfDay, $lt: endOfDay },
+    });
+
+    // Get status counts for this agent
+    const { Types } = require("mongoose");
+    const statusCounts = await ParcelModel.aggregate([
+      { $match: { assignedAgent: new Types.ObjectId(agentId) } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Create statistics
+    const agentStats = {
+      totalAssigned: parcels.length,
+      assignedToday: parcelsAssignedToday.length,
+      pendingPickups:
+        statusCounts.find((status) => status._id === "Pending")?.count || 0,
+      inProgress: statusCounts
+        .filter((status) => ["Picked Up", "In Transit"].includes(status._id))
+        .reduce((sum, item) => sum + item.count, 0),
+      completed:
+        statusCounts.find((status) => status._id === "Delivered")?.count || 0,
+      failed:
+        statusCounts.find((status) => status._id === "Failed")?.count || 0,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcels: parcelsResponse,
+        statistics: agentStats,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
 export const ParcelServices = {
   bookParcel,
   getAllBookings,
   getCustomerBookings,
   updateAssignedAgent,
   deleteParcel,
+  updateParcelStatus,
+  getAgentDashboard,
 };

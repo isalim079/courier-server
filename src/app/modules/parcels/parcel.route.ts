@@ -41,4 +41,18 @@ router.delete(
   ParcelController.deleteParcel
 );
 
+router.put(
+  "/update-status/:parcelId",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.AGENT),
+  ParcelController.updateParcelStatus
+);
+
+router.get(
+  "/agent-dashboard",
+  authMiddleware,
+  roleMiddleware(USER_ROLES.AGENT),
+  ParcelController.getAgentDashboard
+);
+
 export const ParcelRoutes = router;

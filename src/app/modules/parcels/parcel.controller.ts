@@ -118,10 +118,71 @@ const deleteParcel = async (req: Request, res: Response) => {
   });
 };
 
+const updateParcelStatus = async (req: AuthenticatedRequest, res: Response) => {
+  const { parcelId } = req.params;
+  const { status } = req.body;
+  const agentId = req.user!.id;
+
+  // Validate required fields
+  if (!status) {
+    return res.status(400).json({
+      success: false,
+      message: "Status is required",
+    });
+  }
+
+  // Validate status values
+  const validStatuses = ["Pending", "Picked Up", "In Transit", "Delivered", "Failed"];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid status value",
+    });
+  }
+
+  const result = await ParcelServices.updateParcelStatus(parcelId, status, agentId);
+
+  // Handle error responses
+  if (!result.success) {
+    return res.status(result.status).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  res.status(result.status).json({
+    success: true,
+    message: "Parcel status updated successfully",
+    data: result.data,
+  });
+};
+
+const getAgentDashboard = async (req: AuthenticatedRequest, res: Response) => {
+  const agentId = req.user!.id;
+
+  const result = await ParcelServices.getAgentDashboard(agentId);
+
+  // Handle error responses
+  if (!result.success) {
+    return res.status(result.status).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  res.status(result.status).json({
+    success: true,
+    message: "Agent dashboard data retrieved successfully",
+    data: result.data,
+  });
+};
+
 export const ParcelController = { 
   bookParcel, 
   getAllBookings, 
   getMyBookings,
   updateAssignedAgent,
-  deleteParcel
+  deleteParcel,
+  updateParcelStatus,
+  getAgentDashboard
 };
