@@ -177,6 +177,26 @@ const getAgentDashboard = async (req: AuthenticatedRequest, res: Response) => {
   });
 };
 
+const trackParcel = async (req: Request, res: Response) => {
+  const { trackingId } = req.params;
+
+  const result = await ParcelServices.trackParcel(trackingId);
+
+  // Handle error responses
+  if (!result.success) {
+    return res.status(result.status).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  res.status(result.status).json({
+    success: true,
+    message: "Parcel tracking data retrieved successfully",
+    data: result.data,
+  });
+};
+
 export const ParcelController = { 
   bookParcel, 
   getAllBookings, 
@@ -184,5 +204,6 @@ export const ParcelController = {
   updateAssignedAgent,
   deleteParcel,
   updateParcelStatus,
-  getAgentDashboard
+  getAgentDashboard,
+  trackParcel
 };

@@ -55,4 +55,9 @@ router.get(
   ParcelController.getAgentDashboard
 );
 
+router.get(
+  "/track/:trackingId",
+  ParcelController.trackParcel
+);
+
 export const ParcelRoutes = router;

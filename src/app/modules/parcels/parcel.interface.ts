@@ -35,4 +35,5 @@ export type TParcel = {
   pickupSchedule: Date;
   status: "Pending" | "Picked Up" | "In Transit" | "Delivered" | "Failed";
   assignedAgent?: string | null;
+  agentLocation?: TLocation
 };

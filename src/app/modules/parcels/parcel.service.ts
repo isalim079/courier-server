@@ -481,6 +481,52 @@ const getAgentDashboard = async (agentId: string) => {
   }
 };
 
+const trackParcel = async (trackingId: string) => {
+  try {
+    const parcel = await ParcelModel.findOne({ trackingId })
+      .populate("customer", "name email")
+      .populate("assignedAgent", "name email");
+
+    if (!parcel) {
+      return {
+        success: false,
+        status: 404,
+        message: "Parcel not found",
+      };
+    }
+
+    const parcelResponse = {
+      id: parcel._id,
+      trackingId: parcel.trackingId,
+      customer: parcel.customer,
+      senderInfo: parcel.senderInfo,
+      receiverInfo: parcel.receiverInfo,
+      parcelDetails: parcel.parcelDetails,
+      payment: parcel.payment,
+      pickupSchedule: parcel.pickupSchedule,
+      status: parcel.status,
+      assignedAgent: parcel.assignedAgent,
+      agentLocation: parcel.agentLocation,
+      createdAt: (parcel as any).createdAt,
+      updatedAt: (parcel as any).updatedAt,
+    };
+
+    return {
+      success: true,
+      status: 200,
+      data: {
+        parcel: parcelResponse,
+      },
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
 export const ParcelServices = {
   bookParcel,
   getAllBookings,
@@ -489,4 +535,5 @@ export const ParcelServices = {
   deleteParcel,
   updateParcelStatus,
   getAgentDashboard,
+  trackParcel,
 };

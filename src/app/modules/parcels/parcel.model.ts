@@ -144,6 +144,7 @@ const parcelSchema = new Schema<IParcelDocument>(
       ref: "User",
       default: null,
     },
+    agentLocation: {type: locationSchema, default: null}
   },
   {
     timestamps: true,
