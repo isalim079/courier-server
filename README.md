@@ -773,33 +773,12 @@ npm start
 - [ ] Update Google Maps API key restrictions
 - [ ] Test Socket.IO connections with production URLs
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ### Code Style Guidelines
 - Use TypeScript for type safety
 - Follow existing naming conventions
 - Add proper error handling
 - Document API changes
 - Test Socket.IO events thoroughly
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Related Projects
-
-- **Frontend Repository**: [courier-frontend](https://github.com/isalim079/courier-frontend)
-- **Live Demo**: Coming soon
-
-## 📞 Support
-
-For support, email [your-email@example.com](mailto:your-email@example.com) or open an issue on GitHub.
 
 ## 🙏 Acknowledgments
 
