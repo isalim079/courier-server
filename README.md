@@ -105,6 +105,55 @@ This backend is designed to work with the React frontend:
 | `BCRYPT_SALT_ROUNDS` | BCrypt hashing rounds | `12` |
 | `GOOGLE_MAP_API_KEY` | Google Maps Geocoding API key | `AIzaSyBxxxxxxx...` |
 
+## ⚙️ CORS Configuration
+
+The application has **two CORS configurations** that need to be updated based on your deployment:
+
+### 1. Express Server CORS (`src/app.ts`)
+```typescript
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
+  })
+);
+```
+
+### 2. Socket.IO CORS (`src/app/socket/socket.ts`)
+```typescript
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
+  },
+});
+```
+
+### 🔄 Update for Your Environment
+
+**For Development:**
+- Current settings work with React dev servers on ports 5173, 5174
+- Update ports if your frontend runs on different ports
+
+**For Production:**
+```typescript
+// Update both files with your production URLs
+origin: [
+  "https://your-frontend-domain.com",
+  "https://your-admin-panel.com"
+],
+```
+
+**For Multiple Environments:**
+```typescript
+// Use environment-based configuration
+origin: process.env.NODE_ENVIRONMENT === 'production' 
+  ? ["https://your-production-domain.com"]
+  : ["http://localhost:5173", "http://localhost:5174"],
+```
+
+> **⚠️ Important**: Both CORS configurations must match for proper frontend integration. Update both `app.ts` and `socket.ts` when changing allowed origins.
+
 ## 📚 API Documentation
 
 ### Base URL
@@ -635,7 +684,15 @@ npm test                  # Run tests (if configured)
    cp .env.example .env     # Configure environment variables
    ```
 
-2. **Start development**
+2. **Configure CORS for your frontend**
+   ```bash
+   # Update CORS origins in both files:
+   # - src/app.ts (Express CORS)
+   # - src/app/socket/socket.ts (Socket.IO CORS)
+   # Change from localhost:5173,5174 to your frontend URLs
+   ```
+
+3. **Start development**
    ```bash
    npm run start:dev
    ```
@@ -696,6 +753,10 @@ curl -X POST http://localhost:3003/api/v1/auth/register \
 # Build the application
 npm run build
 
+# Update CORS settings for production
+# Edit src/app.ts and src/app/socket/socket.ts
+# Replace localhost URLs with production domains
+
 # Set production environment variables
 export NODE_ENVIRONMENT=production
 export MONGODB_URL=your_production_db_url
@@ -703,6 +764,14 @@ export MONGODB_URL=your_production_db_url
 # Start production server
 npm start
 ```
+
+### ⚠️ Pre-deployment Checklist
+
+- [ ] Update CORS origins in both `app.ts` and `socket.ts`
+- [ ] Set production environment variables
+- [ ] Configure production MongoDB connection
+- [ ] Update Google Maps API key restrictions
+- [ ] Test Socket.IO connections with production URLs
 
 ## 🤝 Contributing
 
