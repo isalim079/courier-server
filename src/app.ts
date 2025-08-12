@@ -8,7 +8,7 @@ import { ParcelRoutes } from "./app/modules/parcels/parcel.route";
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "https://courier-frontend-alpha.vercel.app", "http://localhost:5174"],
     credentials: true,
   })
 );
