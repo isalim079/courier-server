@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ParcelRoutes = void 0;
+const express_1 = require("express");
+const parcel_controller_1 = require("./parcel.controller");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const role_middleware_1 = require("../../middlewares/role.middleware");
+const auth_interface_1 = require("../auth/auth.interface");
+const router = (0, express_1.Router)();
+router.post("/bookAParcel", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.CUSTOMER), parcel_controller_1.ParcelController.bookParcel);
+router.get("/all-bookings", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.ADMIN), parcel_controller_1.ParcelController.getAllBookings);
+router.get("/my-bookings", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.CUSTOMER), parcel_controller_1.ParcelController.getMyBookings);
+router.put("/assign-agent/:parcelId", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.ADMIN), parcel_controller_1.ParcelController.updateAssignedAgent);
+router.delete("/delete/:parcelId", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.ADMIN), parcel_controller_1.ParcelController.deleteParcel);
+router.put("/update-status/:parcelId", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.AGENT), parcel_controller_1.ParcelController.updateParcelStatus);
+router.get("/agent-dashboard", auth_middleware_1.authMiddleware, (0, role_middleware_1.roleMiddleware)(auth_interface_1.USER_ROLES.AGENT), parcel_controller_1.ParcelController.getAgentDashboard);
+router.get("/track/:trackingId", parcel_controller_1.ParcelController.trackParcel);
+exports.ParcelRoutes = router;
